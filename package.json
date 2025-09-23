@@ -1,0 +1,35 @@
+{
+    "name": "next-image-srcset",
+    "version": "1.0.0",
+    "description": "src set generation and components",
+    "author": "Jesse Bassett",
+    "license": "ISC",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "exports": {
+        "./node": {
+            "import": "./src/node/index.js"
+        },
+        "./next": {
+            "import": "./src/next/index.js"
+        },
+        "./react": {
+            "import": "./src/react/index.js"
+        }
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/jebbbbe/next-image-srcset.git"
+    },
+    "dependencies": {
+        "prettier": "^3.6.2",
+        "sharp": "^0.34.4"
+    },
+    "peerDependencies": {
+        "next": "14.2.5",
+        "react": "^18"
+    }
+}
