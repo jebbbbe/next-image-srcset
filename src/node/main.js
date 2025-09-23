@@ -72,7 +72,8 @@ export async function runResizer(props = {}, verbose = false) {
     // get js props from imageAssets file
     const manifest = await loadLocalManifest(settings.localManifestLoc)
     // get image files that are already processed
-    const originalFiles = new Set(Object.keys(manifest).map((k) => `${manifest[k].src}.${manifest[k].ext}`)) // error here with file that have smae name and diff ext...
+    // const originalFiles = new Set(Object.keys(manifest).map((k) => `${manifest[k].src}.${manifest[k].ext}`)) // error here with file that have smae name and diff ext...
+    const originalFiles = new Set(Object.keys(manifest).map((k) => `${manifest[k].src}`)) // error here with file that have smae name and diff ext...
     let filesToProcess
     if (settings.readManifestCache) {
         // get new files that havent been processed yet

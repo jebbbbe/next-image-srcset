@@ -67,10 +67,8 @@ export async function resizeAll(files, localDir, targetDir, sizes, quality = 75,
         const meta = await resizeFile(file, targetDir, sizes, quality, verbose)
         let folder = file.replace(localDir, "")
         folder = path.dirname(folder)
-        let ext = path.extname(file)
-        let baseName = path.basename(file, ext)
+        let baseName = path.basename(file)
         let fileName = baseName
-        ext = ext.slice(1)
         let cnt = 0
         while (all[fileName] !== undefined && all[fileName].ext === ext) {
             fileName = baseName + String(cnt)
@@ -78,8 +76,7 @@ export async function resizeAll(files, localDir, targetDir, sizes, quality = 75,
         }
         all[fileName] = {
             folder: folder,
-            src: fileName,
-            ext: ext,
+            src: baseName,
             alt: "",
             ...meta,
         }
