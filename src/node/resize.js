@@ -68,18 +68,19 @@ export async function resizeAll(files, localDir, targetDir, sizes, quality = 75,
         let folder = file.replace(localDir, "")
         folder = path.dirname(folder)
         let ext = path.extname(file)
-        let baseName = path.basename(file, ext)
-        let fileName = baseName
-        ext = ext.slice(1)
-        let cnt = 0
-        while (all[fileName] !== undefined ) {
-            fileName = baseName + String(cnt)
-            cnt++
+        let fileName = path.basename(file) // with ext
+
+        let baseName = path.basename(file, ext) // no ext
+        let finalBaseName = baseName
+        let seenCnt = 1
+        while (all[finalBaseName] !== undefined ) {
+            finalBaseName = baseName + String(seenCnt)
+            seenCnt++
         }
-        all[fileName] = {
+        
+        all[finalBaseName] = {
             folder: folder,
-            src: baseName,
-            ext: ext,
+            src: fileName,
             alt: "",
             ...meta,
         }
