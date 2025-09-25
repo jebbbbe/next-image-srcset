@@ -14,10 +14,10 @@
             "import": "./src/node/index.js"
         },
         "./next": {
-            "import": "./src/next/index.js"
+            "import": "./src/next/index.jsx"
         },
         "./react": {
-            "import": "./src/react/index.js"
+            "import": "./src/react/index.jsx"
         }
     },
     "repository": {
