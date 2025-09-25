@@ -12,20 +12,21 @@ function outName(inputPath, width) {
 
 /** Resize a single image to a specific width and save as WebP. */
 async function resizeImage(inputPath, outputPath, width, quality = 75) {
-    fs.mkdirSync(path.dirname(outputPath), { recursive: true })
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     const meta = await sharp(inputPath, { animated: true }).metadata();
-  const isAnimated = (meta.pages ?? 1) > 1;
-    return sharp(inputPath)
-        .rotate() // normalize orientation into the pixels
-        .resize({ width, withoutEnlargement: true })
+    const isAnimated = (meta.pages ?? 1) > 1;
+    return sharp(inputPath, { animated: isAnimated })
+        .rotate()
+        .resize({ width, withoutEnlargement: true ,kernel: "lanczos3",})
         .toFormat("webp", {
             quality,
             effort: 4,
+            alphaQuality: 95,
+            smartSubsample: true,
             ...(isAnimated ? { animated: true, loop: 0 } : {}),
         })
-        .toFile(outputPath) // no .withMetadata() → stripped
+        .toFile(outputPath);
 }
-
 /**
  * Resize one file to multiple widths (skips widths > original).
  * Returns { originalWidth, originalHeight, outputs: [ { width, path } ] }
