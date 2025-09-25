@@ -45,28 +45,34 @@ export function setUp({
     localOutputDir = "public/cdnExportOptimzer",
     readManifestCache = true,
     writeManifestCache = true,
+    saveImages = true,
     imageSizes = [16, 32, 48, 64, 96, 128, 256, 384],
     deviceSizes = [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     resizeWidths = undefined,
     validExts = new Set([".jpg", ".jpeg", ".jfif", ".png", ".webp", ".tif", ".tiff", ".gif", ".avif", ".heic", ".heif"]),
     importName = "imageAssets",
+    verbose = false,
+    quality = 75,
 }) {
     settings.localImageDir = localImageDir
     settings.localManifestLoc = localManifestLoc
     settings.localOutputDir = localOutputDir
     settings.readManifestCache = readManifestCache
     settings.writeManifestCache = writeManifestCache
+    settings.saveImages = saveImages
     settings.imageSizes = imageSizes
     settings.deviceSizes = deviceSizes
     settings.resizeWidths = resizeWidths !== undefined ? resizeWidths : [...settings.imageSizes, ...settings.deviceSizes]
     settings.validExts = validExts
     settings.importName = importName
+    settings.verbose = verbose
+    settings.quality = quality
 }
 
-export async function runResizer(props = {}, verbose = false) {
+export async function runResizer(props = {}) {
     setUp(props)
 
-    verbose && console.log(settings)
+    settings.verbose && console.log(settings)
     // get all files in images directory
     const files = getImageFiles(settings.localImageDir)
     // get js props from imageAssets file
@@ -82,7 +88,7 @@ export async function runResizer(props = {}, verbose = false) {
         filesToProcess = files
     }
     // process images
-    const resultData = await resizeAll(filesToProcess, settings.localImageDir, settings.localOutputDir, settings.resizeWidths, 75)
+    const resultData = await resizeAll(filesToProcess, settings.localImageDir, settings.localOutputDir, settings.resizeWidths, 75, settings.saveImages, settings.verbose)
     if (settings.writeManifestCache) {
         // new data
         const newData = { ...manifest, ...resultData }

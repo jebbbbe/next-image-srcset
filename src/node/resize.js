@@ -24,7 +24,7 @@ async function resizeImage(inputPath, outputPath, width, quality = 75) {
  * Resize one file to multiple widths (skips widths > original).
  * Returns { originalWidth, originalHeight, outputs: [ { width, path } ] }
  */
-export async function resizeFile(inputPath, outputDir, sizes, quality, verbose) {
+export async function resizeFile(inputPath, outputDir, sizes, quality, saveImages, verbose) {
     const meta = await sharp(inputPath).metadata()
     const origW = meta.width ?? Infinity
     const origH = meta.height ?? Infinity
@@ -36,7 +36,9 @@ export async function resizeFile(inputPath, outputDir, sizes, quality, verbose) 
     for (const width of widths) {
         const fileName = outName(inputPath, width)
         const outPath = path.join(outputDir, fileName)
-        await resizeImage(inputPath, outPath, width, quality)
+        if(saveImages){
+            await resizeImage(inputPath, outPath, width, quality)
+        }
         verbose && console.log(`✔️\t${outPath}`)
     }
 
@@ -61,12 +63,15 @@ function reduceFraction(w, h) {
  * Resize all files to the given widths into a single targetDir.
  * Returns array of metadata objects for each input file.
  */
-export async function resizeAll(files, localDir, targetDir, sizes, quality = 75, verbose = true) {
+export async function resizeAll(files, localDir, targetDir, sizes, quality = 75, saveImages, verbose = true) {
+
+
+
     fs.mkdirSync(targetDir, { recursive: true })
     const all = {}
     for (const file of files) {
         // console.log(file)
-        const meta = await resizeFile(file, targetDir, sizes, quality, verbose)
+        const meta = await resizeFile(file, targetDir, sizes, quality, saveImages, verbose)
         let folder = file.replace(localDir, "")
         folder = path.dirname(folder)
         let ext = path.extname(file)
