@@ -41,7 +41,9 @@ export async function resizeFile(inputPath, outputDir, sizes, quality, verbose) 
     }
 
     return {
-        width: maxWidth,
+        width:origW,
+        height:origH,
+        maxWidth: maxWidth,
         aspect: `${ow}/${oh}`,
     }
 }
