@@ -13,10 +13,16 @@ function outName(inputPath, width) {
 /** Resize a single image to a specific width and save as WebP. */
 async function resizeImage(inputPath, outputPath, width, quality = 75) {
     fs.mkdirSync(path.dirname(outputPath), { recursive: true })
+    const meta = await sharp(inputPath, { animated: true }).metadata();
+  const isAnimated = (meta.pages ?? 1) > 1;
     return sharp(inputPath)
         .rotate() // normalize orientation into the pixels
         .resize({ width, withoutEnlargement: true })
-        .webp({ quality })
+        .toFormat("webp", {
+            quality,
+            effort: 4,
+            ...(isAnimated ? { animated: true, loop: 0 } : {}),
+        })
         .toFile(outputPath) // no .withMetadata() → stripped
 }
 
