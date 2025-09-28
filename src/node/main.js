@@ -65,7 +65,7 @@ export function setUp({
     localImageDir = "./public/assets/images",
     localManifestLoc = "src/imageAssets.js",
     localOutputDir = "public/cdnExportOptimzer",
-    basepath = "/public",
+    basepath = "public/",
     readManifestCache = true,
     writeManifestCache = true,
     saveImages = true,
