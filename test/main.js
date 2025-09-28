@@ -7,7 +7,7 @@ async function main() {
         localImageDir: "test/img/sample",
         localManifestLoc: "test/img/imageAssets.js",
         localOutputDir: "test/img/result",
-        // readManifestCache: true,
+        readManifestCache: false,
         // writeManifestCache: true,
         imageSizes: [16],
         deviceSizes: [],

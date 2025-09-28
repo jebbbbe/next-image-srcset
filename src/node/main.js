@@ -166,5 +166,5 @@ async function formatFile(filePath) {
     // Overwrite the file
     fs.writeFileSync(filePath, formatted)
 
-    console.log(`Formatted: ${filePath}`)
+    settings.verbose && console.log(`Formatted: ${filePath}`)
 }
