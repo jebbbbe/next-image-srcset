@@ -39,6 +39,27 @@ REPO FILE STRUCTURE
 
 let settings = {}
 
+/**
+ * Configure image optimizer/resizer settings.
+ *
+ * @param {Object} [options] - Configuration options.
+ * @param {string} [options.localImageDir="./public/assets/images"] - Path to local images directory.
+ * @param {string} [options.localManifestLoc="src/imageAssets.js"] - Path to manifest file.
+ * @param {string} [options.localOutputDir="public/cdnExportOptimzer"] - Output directory for optimized images.
+ * @param {string} [options.basepath="/public"] - Base path for resolving local assets.
+ * @param {boolean} [options.readManifestCache=true] - Whether to read from manifest cache.
+ * @param {boolean} [options.writeManifestCache=true] - Whether to write to manifest cache.
+ * @param {boolean} [options.saveImages=true] - Whether to save optimized images.
+ * @param {number[]} [options.imageSizes=[16,32,48,64,96,128,256,384]] - Sizes for image resizing.
+ * @param {number[]} [options.deviceSizes=[640,750,828,1080,1200,1920,2048,3840]] - Device sizes for responsive images.
+ * @param {number[]} [options.resizeWidths] - Explicit list of resize widths (overrides imageSizes + deviceSizes).
+ * @param {Set<string>} [options.validExts=new Set([".jpg",".jpeg",".jfif",".png",".webp",".tif",".tiff",".gif",".avif",".heic",".heif"])] - Allowed image extensions.
+ * @param {string} [options.importName="imageAssets"] - Import name for manifest.
+ * @param {number} [options.quality=75] - Output image quality (0–100).
+ * @param {boolean} [options.generateBlurURL=true] - Whether to generate blurred placeholder URLs.
+ * @param {number} [options.blurWidth=8] - Width of blur placeholder.
+ * @param {boolean} [options.verbose=false] - Verbose logging.
+ */
 export function setUp({
     localImageDir = "./public/assets/images",
     localManifestLoc = "src/imageAssets.js",
@@ -75,6 +96,12 @@ export function setUp({
     settings.blurWidth = blurWidth
 }
 
+/**
+ * Run the resizer with provided options.
+ *
+ * @param {Object} [props] - Same options as {@link setUp}.
+ * @returns {Promise<void>}
+ */
 export async function runResizer(props = {}) {
     setUp(props)
 

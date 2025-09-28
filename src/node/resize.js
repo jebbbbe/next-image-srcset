@@ -44,11 +44,11 @@ async function resizeImage(inputPath, outputPath, width, quality = 75) {
         })
         .toFile(outputPath)
 }
+
 /**
- * Resize one file to multiple widths (skips widths > original).
- * Returns { originalWidth, originalHeight, outputs: [ { width, path } ] }
+ * Resize one file to multiple widths
+ * Returns meta info from file
  */
-// export async function resizeFile(file, localOutputDir, resizeWidths, quality, saveImages, verbose) {
 export async function resizeFile(settings, file) {
     const meta = await sharp(file).metadata()
     const origW = meta.width
@@ -74,6 +74,10 @@ export async function resizeFile(settings, file) {
     }
 }
 
+/**
+ * generates a base64 data Url of the file
+ * Returns url, widht, height of file
+ */
 async function generateBlurDataURL(filePath, blurSize = 8) {
     // ensure EXIF orientation is respected with .rotate()
     const buffer = await sharp(filePath)
@@ -99,9 +103,6 @@ async function generateBlurDataURL(filePath, blurSize = 8) {
  * Returns array of metadata objects for each input file.
  */
 export async function resizeAll(settings, filesToProcess) {
-    // export async function resizeAll({ localImageDir, localOutputDir, resizeWidths, quality = 75, saveImages, verbose = true }, filesToProcess) {
-    // export async function resizeAll(files, localDir, targetDir, sizes, quality = 75, saveImages, verbose = true) {
-
     fs.mkdirSync(settings.localOutputDir, { recursive: true })
     const all = {}
     for (const file of filesToProcess) {
