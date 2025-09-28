@@ -52,10 +52,10 @@ export function setUp({
     resizeWidths = undefined,
     validExts = new Set([".jpg", ".jpeg", ".jfif", ".png", ".webp", ".tif", ".tiff", ".gif", ".avif", ".heic", ".heif"]),
     importName = "imageAssets",
-    verbose = false,
     quality = 75,
     generateBlurURL = true,
     blurWidth = 8,
+    verbose = false,
 }) {
     settings.localImageDir = localImageDir
     settings.localManifestLoc = localManifestLoc

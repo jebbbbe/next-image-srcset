@@ -27,7 +27,6 @@ function pathToParts(p) {
     }
 }
 
-
 /** Resize a single image to a specific width and save as WebP. */
 async function resizeImage(inputPath, outputPath, width, quality = 75) {
     fs.mkdirSync(path.dirname(outputPath), { recursive: true })
@@ -75,34 +74,32 @@ export async function resizeFile(settings, file) {
     }
 }
 
-
 async function generateBlurDataURL(filePath, blurSize = 8) {
-  // ensure EXIF orientation is respected with .rotate()
-  const buffer = await sharp(filePath)
-    .rotate()                 // fix orientation before resize
-    .resize(blurSize)         // shrink to tiny size, preserve aspect ratio
-    .webp({ quality: 50 })    // encode as webp for small size
-    .toBuffer();
+    // ensure EXIF orientation is respected with .rotate()
+    const buffer = await sharp(filePath)
+        .rotate() // fix orientation before resize
+        .resize(blurSize) // shrink to tiny size, preserve aspect ratio
+        .webp({ quality: 50 }) // encode as webp for small size
+        .toBuffer()
 
-  const { width: blurWidth, height: blurHeight } = await sharp(buffer).metadata();
+    const { width: blurWidth, height: blurHeight } = await sharp(buffer).metadata()
 
-  const base64 = buffer.toString("base64");
-  const blurDataURL = `data:image/webp;base64,${base64}`;
+    const base64 = buffer.toString("base64")
+    const blurDataURL = `data:image/webp;base64,${base64}`
 
-  return {
-    blurWidth,
-    blurHeight,
-    blurDataURL,
-  };
+    return {
+        blurWidth,
+        blurHeight,
+        blurDataURL,
+    }
 }
-
 
 /**
  * Resize all files to the given widths into a single targetDir.
  * Returns array of metadata objects for each input file.
  */
 export async function resizeAll(settings, filesToProcess) {
-// export async function resizeAll({ localImageDir, localOutputDir, resizeWidths, quality = 75, saveImages, verbose = true }, filesToProcess) {
+    // export async function resizeAll({ localImageDir, localOutputDir, resizeWidths, quality = 75, saveImages, verbose = true }, filesToProcess) {
     // export async function resizeAll(files, localDir, targetDir, sizes, quality = 75, saveImages, verbose = true) {
 
     fs.mkdirSync(settings.localOutputDir, { recursive: true })
@@ -128,7 +125,7 @@ export async function resizeAll(settings, filesToProcess) {
 
         finalBaseName.replaceAll(" ", "-")
 
-        let base64 = await generateBlurDataURL(file)
+        let base64 = settings.generateBlurURL ? await generateBlurDataURL(file) : undefined
 
         all[finalBaseName] = {
             folder: folder,
@@ -140,4 +137,3 @@ export async function resizeAll(settings, filesToProcess) {
     }
     return all
 }
-
