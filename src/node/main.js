@@ -1,4 +1,4 @@
-import fs, { truncateSync } from "fs"
+import fs from "fs"
 import path from "path"
 import prettier from "prettier"
 import { createRequire } from "module"
@@ -78,9 +78,9 @@ export function setUp({
     blurWidth = 8,
     verbose = false,
 }) {
-    settings.localImageDir = localImageDir
-    settings.localManifestLoc = localManifestLoc
-    settings.localOutputDir = localOutputDir
+    settings.localImageDir = normalizeInputPath(localImageDir)
+    settings.localManifestLoc = normalizeInputPath(localManifestLoc)
+    settings.localOutputDir = normalizeInputPath(localOutputDir)
     settings.basepath = basepath
     settings.readManifestCache = readManifestCache
     settings.writeManifestCache = writeManifestCache
@@ -103,9 +103,9 @@ export function setUp({
  * @returns {Promise<void>}
  */
 export async function runResizer(props = {}) {
+    //get deafualt values
     setUp(props)
 
-    settings.verbose && console.log(settings)
     // get all files in images directory
     const files = getImageFiles(settings.localImageDir)
     // get js props from imageAssets file
@@ -116,7 +116,7 @@ export async function runResizer(props = {}) {
     let filesToProcess
     if (settings.readManifestCache) {
         // get new files that havent been processed yet
-        filesToProcess = files.filter((f) => !originalFiles.has( path.basename(f) ))
+        filesToProcess = files.filter((f) => !originalFiles.has(path.basename(f)))
     } else {
         filesToProcess = files
     }
@@ -166,7 +166,6 @@ async function loadLocalManifest(filePath, importName = settings.importName) {
         return res
     } catch (err) {
         console.warn("⚠️ Config not found, creating default one...")
-        console.log(err)
         const defaultConfig = {}
         const js = createlocalManifestJS(defaultConfig)
         fs.writeFileSync(filePath, js, "utf8")
@@ -199,4 +198,10 @@ async function formatFile(filePath) {
     fs.writeFileSync(filePath, formatted)
 
     settings.verbose && console.log(`Formatted: ${filePath}`)
+}
+
+function normalizeInputPath(p) {
+  // Normalize slashes for safety, then strip leading ./ or /
+  let normalized = path.normalize(p).replace(/^(\.\/|\/)+/, "");
+  return normalized;
 }

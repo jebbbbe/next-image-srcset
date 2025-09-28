@@ -1,14 +1,21 @@
+import fs from "fs"
 import { runResizer, setUp } from "../src/node/main.js"
 
 main()
 
 async function main() {
+    let mPath = "test/img/imageAssets.js"
+
+    if (fs.existsSync(mPath)) {
+        fs.unlinkSync(mPath)
+    }
+
     await runResizer({
         localImageDir: "test/img/sample",
-        localManifestLoc: "test/img/imageAssets.js",
+        localManifestLoc: mPath,
         localOutputDir: "test/img/result",
-        // basepath: "/public",
-        readManifestCache: false,
+        basepath: "test/",
+        // readManifestCache: false,
         // writeManifestCache: true,
         // saveImages: true,
         imageSizes: [16], //[16, 32, 48, 64, 96, 128, 256, 384],
@@ -16,7 +23,7 @@ async function main() {
         // validExts: new Set([".gif"]), //new Set([".jpg", ".jpeg", ".jfif", ".png", ".webp", ".tif", ".tiff", ".gif", ".avif", ".heic", ".heif"])
         // importName: 'imageAssets',
         // quality: 75,
-        generateBlurURL: false,
+        generateBlurURL: true,
         // blurWidth: 8,
         verbose: true,
     })

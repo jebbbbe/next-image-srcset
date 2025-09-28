@@ -3,11 +3,14 @@ import sharp from "sharp"
 import fs from "fs"
 import path from "path"
 
-/** Build a unique output filename that lives in ONE folder */
 function outName(inputPath, width) {
     const abs = path.resolve(inputPath)
     const { name, dir } = path.parse(abs)
     return `${name}-${width}.webp`
+}
+
+function stripLeadingSlash(p) {
+    return p.replace(/^\/+/, "")
 }
 
 function gcd(a, b) {
@@ -64,7 +67,7 @@ export async function resizeFile(settings, file) {
         if (settings.saveImages) {
             await resizeImage(file, outPath, width, settings.quality)
         }
-        settings.verbose && console.log(`✔️\t${outPath}`)
+        settings.verbose && console.log(`✅\t${outPath}`)
     }
 
     return {
@@ -106,31 +109,23 @@ export async function resizeAll(settings, filesToProcess) {
     fs.mkdirSync(settings.localOutputDir, { recursive: true })
     const all = {}
     for (const file of filesToProcess) {
-        // console.log(file)
         const meta = await resizeFile(settings, file)
-        // const meta = await resizeFile(file, localOutputDir, resizeWidths, quality, saveImages, verbose)
-        //
-        console.log(pathToParts(file))
-        let folder = file.replace(settings.localImageDir, "")
-        folder = path.dirname(folder)
-        let ext = path.extname(file)
-        let fileName = path.basename(file) // with ext
-        let baseName = path.basename(file, ext) // no ext
+        const { dir, name, ext } = pathToParts(file)
+        const usedPath = file.replace(settings.basepath, "")
 
-        let finalBaseName = baseName
+        // ensure unique save name
+        let saveName = name
         let seenCnt = 1
-        while (all[finalBaseName] !== undefined) {
-            finalBaseName = baseName + String(seenCnt)
+        while (all[saveName] !== undefined) {
+            saveName = name + String(seenCnt)
             seenCnt++
         }
-
-        finalBaseName.replaceAll(" ", "-")
+        saveName.replaceAll(" ", "-")
 
         let base64 = settings.generateBlurURL ? await generateBlurDataURL(file) : undefined
 
-        all[finalBaseName] = {
-            folder: folder,
-            src: fileName,
+        all[saveName] = {
+            src: usedPath,
             alt: "",
             ...meta,
             ...(base64 || {}),
