@@ -70,20 +70,18 @@ function reduceFraction(w, h) {
  * Resize all files to the given widths into a single targetDir.
  * Returns array of metadata objects for each input file.
  */
-export async function resizeAll(files, localDir, targetDir, sizes, quality = 75, saveImages, verbose = true) {
+export async function resizeAll(  { localImageDir, localOutputDir, resizeWidths, quality = 75, saveImages, verbose = true,},filesToProcess) {
+// export async function resizeAll(files, localDir, targetDir, sizes, quality = 75, saveImages, verbose = true) {
 
-
-
-    fs.mkdirSync(targetDir, { recursive: true })
+    fs.mkdirSync(localOutputDir, { recursive: true })
     const all = {}
-    for (const file of files) {
+    for (const file of filesToProcess) {
         // console.log(file)
-        const meta = await resizeFile(file, targetDir, sizes, quality, saveImages, verbose)
-        let folder = file.replace(localDir, "")
+        const meta = await resizeFile(file, localOutputDir, resizeWidths, quality, saveImages, verbose)
+        let folder = file.replace(localImageDir, "")
         folder = path.dirname(folder)
         let ext = path.extname(file)
         let fileName = path.basename(file) // with ext
-
         let baseName = path.basename(file, ext) // no ext
         let finalBaseName = baseName
         let seenCnt = 1

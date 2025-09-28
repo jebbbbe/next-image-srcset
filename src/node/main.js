@@ -88,7 +88,8 @@ export async function runResizer(props = {}) {
         filesToProcess = files
     }
     // process images
-    const resultData = await resizeAll(filesToProcess, settings.localImageDir, settings.localOutputDir, settings.resizeWidths, 75, settings.saveImages, settings.verbose)
+    const resultData = await resizeAll(settings, filesToProcess)
+    // const resultData = await resizeAll(filesToProcess, settings.localImageDir, settings.localOutputDir, settings.resizeWidths, 75, settings.saveImages, settings.verbose)
     if (settings.writeManifestCache) {
         // new data
         const newData = { ...manifest, ...resultData }
