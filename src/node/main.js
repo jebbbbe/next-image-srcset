@@ -1,4 +1,4 @@
-import fs from "fs"
+import fs, { truncateSync } from "fs"
 import path from "path"
 import prettier from "prettier"
 import { createRequire } from "module"
@@ -53,6 +53,8 @@ export function setUp({
     importName = "imageAssets",
     verbose = false,
     quality = 75,
+    generateBlurURL = true,
+    blurWidth = 8,
 }) {
     settings.localImageDir = localImageDir
     settings.localManifestLoc = localManifestLoc
@@ -67,6 +69,8 @@ export function setUp({
     settings.importName = importName
     settings.verbose = verbose
     settings.quality = quality
+    settings.generateBlurURL = generateBlurURL
+    settings.blurWidth = blurWidth
 }
 
 export async function runResizer(props = {}) {

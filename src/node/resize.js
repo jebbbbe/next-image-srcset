@@ -10,6 +10,24 @@ function outName(inputPath, width) {
     return `${name}-${width}.webp`
 }
 
+function gcd(a, b) {
+    return b === 0 ? a : gcd(b, a % b)
+}
+
+function reduceFraction(w, h) {
+    const d = gcd(w, h)
+    return [w / d, h / d]
+}
+
+function pathToParts(p) {
+    return {
+        dir: path.dirname(p),
+        name: path.basename(p, path.extname(p)),
+        ext: path.extname(p),
+    }
+}
+
+
 /** Resize a single image to a specific width and save as WebP. */
 async function resizeImage(inputPath, outputPath, width, quality = 75) {
     fs.mkdirSync(path.dirname(outputPath), { recursive: true })
@@ -40,7 +58,6 @@ export async function resizeFile(inputPath, outputDir, sizes, quality, saveImage
 
     // filter valid widths
     const widths = Array.from(new Set(sizes)).filter((w) => Number.isFinite(w) && w > 0 && w <= origW)
-    const maxWidth = widths.at(-1)
     for (const width of widths) {
         const fileName = outName(inputPath, width)
         const outPath = path.join(outputDir, fileName)
@@ -53,19 +70,31 @@ export async function resizeFile(inputPath, outputDir, sizes, quality, saveImage
     return {
         width: origW,
         height: origH,
-        // maxWidth: maxWidth,
         aspect,
     }
 }
 
-function gcd(a, b) {
-    return b === 0 ? a : gcd(b, a % b)
+
+async function generateBlurDataURL(filePath, blurSize = 8) {
+  // ensure EXIF orientation is respected with .rotate()
+  const buffer = await sharp(filePath)
+    .rotate()                 // fix orientation before resize
+    .resize(blurSize)         // shrink to tiny size, preserve aspect ratio
+    .webp({ quality: 50 })    // encode as webp for small size
+    .toBuffer();
+
+  const { width: blurWidth, height: blurHeight } = await sharp(buffer).metadata();
+
+  const base64 = buffer.toString("base64");
+  const blurDataURL = `data:image/webp;base64,${base64}`;
+
+  return {
+    blurWidth,
+    blurHeight,
+    blurDataURL,
+  };
 }
 
-function reduceFraction(w, h) {
-    const d = gcd(w, h)
-    return [w / d, h / d]
-}
 
 /**
  * Resize all files to the given widths into a single targetDir.
@@ -93,20 +122,18 @@ export async function resizeAll({ localImageDir, localOutputDir, resizeWidths, q
             seenCnt++
         }
 
+        finalBaseName.replaceAll(" ", "-")
+
+        let base64 = await generateBlurDataURL(file)
+
         all[finalBaseName] = {
             folder: folder,
             src: fileName,
             alt: "",
             ...meta,
+            ...base64,
         }
     }
     return all
 }
 
-function pathToParts(p) {
-    return {
-        dir: path.dirname(p),
-        name: path.basename(p, path.extname(p)),
-        ext: path.extname(p),
-    }
-}
