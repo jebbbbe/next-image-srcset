@@ -154,11 +154,8 @@ function getImageFiles(dir, exts = settings.validExts) {
 async function loadLocalManifest(filePath, importName = settings.importName) {
     const abs = path.resolve(filePath)
     try {
-        // clear cache so edits are picked up on reruns
-        try {
-            delete require.cache[require.resolve(abs)]
-        } catch {}
-        const mod = require(abs) // loads .js as CommonJS without warnings
+        // bust cache by appending a query param
+        const mod = await import(abs + "?update=" + Date.now())
         let res = mod[importName] ?? mod.default?.[importName]
         if (res === undefined) {
             throw new Error("config wasnt defined")
