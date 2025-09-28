@@ -43,6 +43,7 @@ export function setUp({
     localImageDir = "./public/assets/images",
     localManifestLoc = "src/imageAssets.js",
     localOutputDir = "public/cdnExportOptimzer",
+    basepath = "/public",
     readManifestCache = true,
     writeManifestCache = true,
     saveImages = true,
@@ -59,6 +60,7 @@ export function setUp({
     settings.localImageDir = localImageDir
     settings.localManifestLoc = localManifestLoc
     settings.localOutputDir = localOutputDir
+    settings.basepath = basepath
     settings.readManifestCache = readManifestCache
     settings.writeManifestCache = writeManifestCache
     settings.saveImages = saveImages
@@ -93,7 +95,6 @@ export async function runResizer(props = {}) {
     }
     // process images
     const resultData = await resizeAll(settings, filesToProcess)
-    // const resultData = await resizeAll(filesToProcess, settings.localImageDir, settings.localOutputDir, settings.resizeWidths, 75, settings.saveImages, settings.verbose)
     if (settings.writeManifestCache) {
         // new data
         const newData = { ...manifest, ...resultData }
@@ -111,7 +112,7 @@ function getImageFiles(dir, exts = settings.validExts) {
     for (const entry of list) {
         const fullPath = path.join(dir, entry.name)
         if (entry.isDirectory()) {
-            results = results.concat(getImageFiles(fullPath)) // dive in
+            results = results.concat(getImageFiles(fullPath))
         } else {
             const ext = path.extname(entry.name).toLowerCase()
             if (exts.has(ext)) {

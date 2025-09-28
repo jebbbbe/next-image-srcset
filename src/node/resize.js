@@ -49,22 +49,23 @@ async function resizeImage(inputPath, outputPath, width, quality = 75) {
  * Resize one file to multiple widths (skips widths > original).
  * Returns { originalWidth, originalHeight, outputs: [ { width, path } ] }
  */
-export async function resizeFile(inputPath, outputDir, sizes, quality, saveImages, verbose) {
-    const meta = await sharp(inputPath).metadata()
+// export async function resizeFile(file, localOutputDir, resizeWidths, quality, saveImages, verbose) {
+export async function resizeFile(settings, file) {
+    const meta = await sharp(file).metadata()
     const origW = meta.width
     const origH = meta.height
     const [ow, oh] = reduceFraction(origW, origH)
     const aspect = `${ow}/${oh}`
 
     // filter valid widths
-    const widths = Array.from(new Set(sizes)).filter((w) => Number.isFinite(w) && w > 0 && w <= origW)
+    const widths = Array.from(new Set(settings.resizeWidths)).filter((w) => Number.isFinite(w) && w > 0 && w <= origW)
     for (const width of widths) {
-        const fileName = outName(inputPath, width)
-        const outPath = path.join(outputDir, fileName)
-        if (saveImages) {
-            await resizeImage(inputPath, outPath, width, quality)
+        const fileName = outName(file, width)
+        const outPath = path.join(settings.localOutputDir, fileName)
+        if (settings.saveImages) {
+            await resizeImage(file, outPath, width, settings.quality)
         }
-        verbose && console.log(`✔️\t${outPath}`)
+        settings.verbose && console.log(`✔️\t${outPath}`)
     }
 
     return {
@@ -100,16 +101,19 @@ async function generateBlurDataURL(filePath, blurSize = 8) {
  * Resize all files to the given widths into a single targetDir.
  * Returns array of metadata objects for each input file.
  */
-export async function resizeAll({ localImageDir, localOutputDir, resizeWidths, quality = 75, saveImages, verbose = true }, filesToProcess) {
+export async function resizeAll(settings, filesToProcess) {
+// export async function resizeAll({ localImageDir, localOutputDir, resizeWidths, quality = 75, saveImages, verbose = true }, filesToProcess) {
     // export async function resizeAll(files, localDir, targetDir, sizes, quality = 75, saveImages, verbose = true) {
 
-    fs.mkdirSync(localOutputDir, { recursive: true })
+    fs.mkdirSync(settings.localOutputDir, { recursive: true })
     const all = {}
     for (const file of filesToProcess) {
         // console.log(file)
-        const meta = await resizeFile(file, localOutputDir, resizeWidths, quality, saveImages, verbose)
+        const meta = await resizeFile(settings, file)
+        // const meta = await resizeFile(file, localOutputDir, resizeWidths, quality, saveImages, verbose)
+        //
         console.log(pathToParts(file))
-        let folder = file.replace(localImageDir, "")
+        let folder = file.replace(settings.localImageDir, "")
         folder = path.dirname(folder)
         let ext = path.extname(file)
         let fileName = path.basename(file) // with ext
@@ -131,7 +135,7 @@ export async function resizeAll({ localImageDir, localOutputDir, resizeWidths, q
             src: fileName,
             alt: "",
             ...meta,
-            ...base64,
+            ...(base64 || {}),
         }
     }
     return all
