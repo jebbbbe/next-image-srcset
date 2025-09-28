@@ -4,7 +4,7 @@ import prettier from "prettier"
 import { createRequire } from "module"
 const require = createRequire(import.meta.url) // stupid mjs link stuff
 
-import { resizeAll } from "./resize.js"
+import { resizeAll, pathToParts } from "./resize.js"
 
 /* 
 
@@ -58,6 +58,7 @@ let settings = {}
  * @param {number} [options.quality=75] - Output image quality (0–100).
  * @param {boolean} [options.generateBlurURL=true] - Whether to generate blurred placeholder URLs.
  * @param {number} [options.blurWidth=8] - Width of blur placeholder.
+ * @param {number} [options.preserveNames=true] - keep Key names that exist in manifest
  * @param {boolean} [options.verbose=false] - Verbose logging.
  */
 export function setUp({
@@ -76,6 +77,7 @@ export function setUp({
     quality = 75,
     generateBlurURL = true,
     blurWidth = 8,
+    preserveNames = true,
     verbose = false,
 }) {
     settings.localImageDir = normalizeInputPath(localImageDir)
@@ -90,10 +92,11 @@ export function setUp({
     settings.resizeWidths = resizeWidths !== undefined ? resizeWidths : [...settings.imageSizes, ...settings.deviceSizes]
     settings.validExts = validExts
     settings.importName = importName
-    settings.verbose = verbose
     settings.quality = quality
     settings.generateBlurURL = generateBlurURL
     settings.blurWidth = blurWidth
+    settings.preserveNames = preserveNames
+    settings.verbose = verbose
 }
 
 /**
@@ -111,18 +114,37 @@ export async function runResizer(props = {}) {
     // get js props from imageAssets file
     const manifest = await loadLocalManifest(settings.localManifestLoc)
     // get image files that are already processed
-    const originalFiles = new Set(Object.keys(manifest).map((k) => `${manifest[k].src}`)) // error here with file that have smae name and diff ext...
+    const originalFiles = new Set(Object.keys(manifest).map((k) => path.basename(`${manifest[k].src}`))) // error here with file that have smae name and diff ext...
 
     let filesToProcess
     if (settings.readManifestCache) {
         // get new files that havent been processed yet
-        filesToProcess = files.filter((f) => !originalFiles.has(path.basename(f)))
+        filesToProcess = files.filter((f) => {
+            return !originalFiles.has(path.basename(f))
+        })
     } else {
         filesToProcess = files
     }
     // process images
     const resultData = await resizeAll(settings, filesToProcess)
     if (settings.writeManifestCache) {
+        if (settings.preserveNames) {
+            let nameMap = {}
+            // map of src filename -> prop name for manifest
+            Object.keys(manifest).forEach((key) => {
+                // nameMap[manifest[key].src] = key
+                nameMap[path.basename(manifest[key].src)] = key
+            })
+            // iterate over resultData, swap props with matching src to manifest prop name
+            Object.keys(resultData).forEach((key) => {
+                // const _src = resultData[key].src
+                const _src = path.basename(resultData[key].src)
+                const prevName = nameMap[_src]
+                if( key !== prevName && prevName !== undefined){
+                    renameProp(resultData, key, prevName)
+                }
+            })
+        }
         // new data
         const newData = { ...manifest, ...resultData }
         // save JS file
@@ -166,7 +188,7 @@ async function loadLocalManifest(filePath, importName = settings.importName) {
         const defaultConfig = {}
         const js = createlocalManifestJS(defaultConfig)
         fs.writeFileSync(filePath, js, "utf8")
-        await formatFile(filePath)
+        await formatFile(filePath, false)
         return defaultConfig
     }
 }
@@ -178,7 +200,7 @@ function createlocalManifestJS(obj, importName = settings.importName) {
     return header + `\n` + fileContents + `\n` + footer
 }
 
-async function formatFile(filePath) {
+async function formatFile(filePath, verbose = settings.verbose) {
     // Load Prettier config (synchronously)
     const options = (await prettier.resolveConfig(filePath)) || {}
 
@@ -194,11 +216,19 @@ async function formatFile(filePath) {
     // Overwrite the file
     fs.writeFileSync(filePath, formatted)
 
-    settings.verbose && console.log(`Formatted: ${filePath}`)
+    verbose && console.log(`Formatted: ${filePath}`)
 }
 
 function normalizeInputPath(p) {
-  // Normalize slashes for safety, then strip leading ./ or /
-  let normalized = path.normalize(p).replace(/^(\.\/|\/)+/, "");
-  return normalized;
+    // Normalize slashes for safety, then strip leading ./ or /
+    let normalized = path.normalize(p).replace(/^(\.\/|\/)+/, "")
+    return normalized
+}
+
+function renameProp(obj, srcKey, targKey) {
+    if (srcKey in obj) {
+        obj[targKey] = obj[srcKey]
+        delete obj[srcKey]
+    }
+    return obj
 }

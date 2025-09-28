@@ -22,9 +22,10 @@ function reduceFraction(w, h) {
     return [w / d, h / d]
 }
 
-function pathToParts(p) {
+export function pathToParts(p) {
     return {
         dir: path.dirname(p),
+        fileName: path.basename(p),
         name: path.basename(p, path.extname(p)),
         ext: path.extname(p),
     }
@@ -111,7 +112,7 @@ export async function resizeAll(settings, filesToProcess) {
     for (const file of filesToProcess) {
         const meta = await resizeFile(settings, file)
         const { dir, name, ext } = pathToParts(file)
-        const usedPath = file.replace(settings.basepath, "")
+        const filePath = stripLeadingSlash( file.replace(settings.basepath, "") )
 
         // ensure unique save name
         let saveName = name
@@ -125,7 +126,7 @@ export async function resizeAll(settings, filesToProcess) {
         let base64 = settings.generateBlurURL ? await generateBlurDataURL(file) : undefined
 
         all[saveName] = {
-            src: usedPath,
+            src: filePath,
             alt: "",
             ...meta,
             ...(base64 || {}),
