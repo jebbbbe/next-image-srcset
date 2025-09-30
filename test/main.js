@@ -6,9 +6,9 @@ main()
 async function main() {
     let mPath = "test/img/imageAssets.js"
 
-    // if (fs.existsSync(mPath)) {
-    //     fs.unlinkSync(mPath)
-    // }
+    if (fs.existsSync(mPath)) {
+        fs.unlinkSync(mPath)
+    }
 
     await runResizer({
         localImageDir: "test/img/sample",

@@ -1,8 +1,6 @@
 import fs from "fs"
 import path from "path"
 import prettier from "prettier"
-import { createRequire } from "module"
-const require = createRequire(import.meta.url) // stupid mjs link stuff
 
 import { resizeAll, pathToParts } from "./resize.js"
 
@@ -62,7 +60,7 @@ let settings = {}
  * @param {boolean} [options.verbose=false] - Verbose logging.
  */
 export function setUp({
-    localImageDir = "./public/assets/images",
+    localImageDir = "public/assets/images",
     localManifestLoc = "src/imageAssets.js",
     localOutputDir = "public/cdnExportOptimzer",
     basepath = "public/",
