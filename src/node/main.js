@@ -43,10 +43,12 @@ let settings = {}
  * @param {Object} [options] - Configuration options.
  * @param {string} [options.localImageDir="./public/assets/images"] - Path to local images directory.
  * @param {string} [options.localManifestLoc="src/imageAssets.js"] - Path to manifest file.
+ * @param {string} [options.localCacheLoc="cache/images.json"] - Path to processed image cache.
  * @param {string} [options.localOutputDir="public/cdnExportOptimzer"] - Output directory for optimized images.
  * @param {string} [options.basepath="/public"] - Base path for resolving local assets.
- * @param {boolean} [options.readManifestCache=true] - Whether to read from manifest cache.
- * @param {boolean} [options.writeManifestCache=true] - Whether to write to manifest cache.
+ * @param {boolean} [options.readCache=true] - Whether to skip cached images.
+ * @param {boolean} [options.writeCache=true] - Whether to save processed images to cache.
+ * @param {boolean} [options.writeManifestCache=true] - Whether to update the asset manifest.
  * @param {boolean} [options.saveImages=true] - Whether to save optimized images.
  * @param {number[]} [options.imageSizes=[16,32,48,64,96,128,256,384]] - Sizes for image resizing.
  * @param {number[]} [options.deviceSizes=[640,750,828,1080,1200,1920,2048,3840]] - Device sizes for responsive images.
@@ -62,9 +64,11 @@ let settings = {}
 export function setUp({
     localImageDir = "public/assets/images",
     localManifestLoc = "src/imageAssets.js",
+    localCacheLoc = "cache/images.json",
     localOutputDir = "public/cdnExportOptimzer",
     basepath = "public/",
-    readManifestCache = true,
+    readCache = true,
+    writeCache = true,
     writeManifestCache = true,
     saveImages = true,
     imageSizes = [16, 32, 48, 64, 96, 128, 256, 384],
@@ -80,9 +84,11 @@ export function setUp({
 }) {
     settings.localImageDir = normalizeInputPath(localImageDir)
     settings.localManifestLoc = normalizeInputPath(localManifestLoc)
+    settings.localCacheLoc = normalizeInputPath(localCacheLoc)
     settings.localOutputDir = normalizeInputPath(localOutputDir)
     settings.basepath = basepath
-    settings.readManifestCache = readManifestCache
+    settings.readCache = readCache
+    settings.writeCache = writeCache
     settings.writeManifestCache = writeManifestCache
     settings.saveImages = saveImages
     settings.imageSizes = imageSizes
@@ -111,44 +117,60 @@ export async function runResizer(props = {}) {
     const files = getImageFiles(settings.localImageDir)
     // get js props from imageAssets file
     const manifest = await loadLocalManifest(settings.localManifestLoc)
-    // get image files that are already processed
-    const originalFiles = new Set(Object.keys(manifest).map((k) => path.basename(`${manifest[k].src}`))) // error here with file that have smae name and diff ext...
+    // track processed images separately from the asset manifest
+    const cache = fs.existsSync(settings.localCacheLoc) ? JSON.parse(fs.readFileSync(settings.localCacheLoc, "utf8")) : {}
+    const originalFiles = new Set(Object.values(cache).map((asset) => asset.src))
 
     let filesToProcess
-    if (settings.readManifestCache) {
+    if (settings.readCache) {
         // get new files that havent been processed yet
         filesToProcess = files.filter((f) => {
-            return !originalFiles.has(path.basename(f))
+            return !originalFiles.has(f.replace(settings.basepath, "").replace(/^\/+/, ""))
         })
     } else {
         filesToProcess = files
     }
-    // process images
-    const resultData = await resizeAll(settings, filesToProcess)
-    if (settings.writeManifestCache) {
-        if (settings.preserveNames) {
-            let nameMap = {}
-            // map of src filename -> prop name for manifest
-            Object.keys(manifest).forEach((key) => {
-                // nameMap[manifest[key].src] = key
-                nameMap[path.basename(manifest[key].src)] = key
-            })
-            // iterate over resultData, swap props with matching src to manifest prop name
+    // save each completed image so interrupted runs can resume
+    for (const file of filesToProcess) {
+        const resultData = await resizeAll(settings, [file])
+        if (settings.writeManifestCache) {
+            if (settings.preserveNames) {
+                let nameMap = {}
+                // map of src -> prop name for manifest
+                Object.keys(manifest).forEach((key) => {
+                    nameMap[manifest[key].src] = key
+                })
+                // swap props with matching src to manifest prop name
+                Object.keys(resultData).forEach((key) => {
+                    const _src = resultData[key].src
+                    const prevName = nameMap[_src]
+                    if (prevName !== undefined) {
+                        resultData[key] = { ...manifest[prevName], ...resultData[key], alt: manifest[prevName].alt ?? resultData[key].alt }
+                        if (key !== prevName) renameProp(resultData, key, prevName)
+                    }
+                })
+            }
             Object.keys(resultData).forEach((key) => {
-                // const _src = resultData[key].src
-                const _src = path.basename(resultData[key].src)
-                const prevName = nameMap[_src]
-                if( key !== prevName && prevName !== undefined){
-                    renameProp(resultData, key, prevName)
-                }
+                let name = key
+                for (let suffix = 1; manifest[name] !== undefined && manifest[name].src !== resultData[key].src; suffix++) name = key + String(suffix)
+                if (name !== key) renameProp(resultData, key, name)
             })
+            // new data
+            const newData = { ...manifest, ...resultData }
+            // save JS file
+            const js = createlocalManifestJS(newData)
+            fs.writeFileSync(settings.localManifestLoc, js, "utf8")
+            await formatFile(settings.localManifestLoc)
+            Object.assign(manifest, resultData)
         }
-        // new data
-        const newData = { ...manifest, ...resultData }
-        // save JS file
-        const js = createlocalManifestJS(newData)
-        fs.writeFileSync(settings.localManifestLoc, js, "utf8")
-        await formatFile(settings.localManifestLoc)
+        if (settings.writeCache && settings.saveImages) {
+            Object.values(resultData).forEach((data) => {
+                cache[data.src] = data
+            })
+            fs.mkdirSync(path.dirname(settings.localCacheLoc), { recursive: true })
+            fs.writeFileSync(settings.localCacheLoc + ".tmp", JSON.stringify(cache, null, 2), "utf8")
+            fs.renameSync(settings.localCacheLoc + ".tmp", settings.localCacheLoc)
+        }
     }
 }
 
