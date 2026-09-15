@@ -1,6 +1,7 @@
 import fs from "fs"
 import path from "path"
 import prettier from "prettier"
+import sharp from "sharp"
 
 import { resizeAll, pathToParts } from "./resize.js"
 
@@ -133,6 +134,16 @@ export async function runResizer(props = {}) {
     // save each completed image so interrupted runs can resume
     for (const file of filesToProcess) {
         const resultData = await resizeAll(settings, [file])
+        // Match metadata to the EXIF rotation already applied by the resizer.
+        const { orientation } = await sharp(file).metadata()
+        if (orientation >= 5 && orientation <= 8) {
+            Object.values(resultData).forEach((data) => {
+                const width = data.width
+                data.width = data.height
+                data.height = width
+                data.aspect = data.aspect.split("/").reverse().join("/")
+            })
+        }
         if (settings.writeManifestCache) {
             if (settings.preserveNames) {
                 let nameMap = {}
